@@ -61,6 +61,9 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
       })
     } catch {
       alert('Todo creation failed')
+      this.setState({
+        loadingTodos: false
+      })
     }
   }
 
@@ -76,6 +79,9 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
       })
     } catch {
       alert('Todo deletion failed')
+      this.setState({
+        loadingTodos: false
+      })
     }
   }
 
@@ -98,6 +104,9 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
       })
     } catch {
       alert('Todo deletion failed')
+      this.setState({
+        loadingTodos: false
+      })
     }
   }
 
@@ -110,6 +119,9 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
       })
     } catch (e) {
       alert(`Failed to fetch todos: ${(e as Error).message}`)
+      this.setState({
+        loadingTodos: false
+      })
     }
   }
 
