@@ -49,3 +49,12 @@ export async function deleteTodo(
   logger.info('Call function deleteTodo')
   return await todosAccess.deleteTodo(userId, todoId)
 }
+
+export async function createAttachmentPresignedUrl(
+  userId: string,
+  todoId: string
+): Promise<String> {
+  logger.info('Call function createAttachmentPresignedUrl')
+  const uploadUrl = todosAccess.getUploadUrl(todoId, userId)
+  return uploadUrl
+}

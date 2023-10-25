@@ -7,11 +7,14 @@ import { TodoUpdate } from '../models/TodoUpdate'
 
 const XAWS = AWSXRay.captureAWS(AWS)
 const logger = createLogger('TodosAccess')
+const url_expiration = process.env.SIGNED_URL_EXPIRATION
 
 export class TodosAccess {
   constructor(
     private readonly docClient: DocumentClient = createDynamoDBClient(),
-    private readonly todosTable = process.env.TODOS_TABLE
+    private readonly todosTable = process.env.TODOS_TABLE,
+    private readonly todosIndex = process.env.TODOS_CREATED_AT_INDEX,
+    private readonly S3 = new XAWS.S3({ signatureVersion: 'v4' })
   ) {}
 
   async createTodo(todo: TodoItem): Promise<TodoItem> {
@@ -28,6 +31,7 @@ export class TodosAccess {
     logger.info(`get todos for userId: ${userId}`)
     let params = {
       TableName: this.todosTable,
+      IndexName: this.todosIndex,
       KeyConditionExpression: 'userId = :userId',
       ExpressionAttributeValues: {
         ':userId': userId
@@ -77,6 +81,29 @@ export class TodosAccess {
     }
     const result = await this.docClient.delete(params).promise()
     return result.Attributes as TodoItem
+  }
+
+  async getUploadUrl(todoId: string, userId: string): Promise<string> {
+    logger.info(`getUploadUrl TodoId: ${todoId}, userId: ${userId}`)
+    const uploadUrl = this.S3.getSignedUrl('putObject', {
+      Bucket: process.env.ATTACHMENT_S3_BUCKET,
+      Key: todoId,
+      Expires: Number(url_expiration)
+    })
+    let params = {
+      TableName: this.todosTable,
+      Key: {
+        userId,
+        todoId
+      },
+      UpdateExpression: 'set attachmentUrl = :URL',
+      ExpressionAttributeValues: {
+        ':URL': uploadUrl.split('?')[0]
+      },
+      ReturnValues: 'UPDATED_NEW'
+    }
+    await this.docClient.update(params).promise()
+    return uploadUrl
   }
 }
 
